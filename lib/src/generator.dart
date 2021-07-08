@@ -7,7 +7,7 @@
  */
 
 import 'dart:convert';
-import 'dart:typed_data' show Uint8List;
+import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import 'package:image/image.dart';
 import 'package:gbk_codec/gbk_codec.dart';
@@ -567,8 +567,10 @@ class Generator {
   /// Print an image using (ESC *) command
   ///
   /// [image] is an instanse of class from [Image library](https://pub.dev/packages/image)
-  List<int> image(Image imgSrc, {PosAlign align = PosAlign.center}) {
+  Uint8ClampedList image(Image imgSrc, {PosAlign align = PosAlign.center}) {
     List<int> bytes = [];
+    var startTime = DateTime.now().millisecondsSinceEpoch;
+
     // Image alignment
     bytes += setStyles(PosStyles().copyWith(align: align));
 
@@ -578,17 +580,21 @@ class Generator {
 
     invert(image);
     flip(image, Flip.horizontal);
+    print("flip = ${DateTime.now().millisecondsSinceEpoch - startTime} ms");
+
     final Image imageRotated = copyRotate(image, 270);
+    print("rotate = ${DateTime.now().millisecondsSinceEpoch - startTime} ms");
 
     const int lineHeight = highDensityVertical ? 3 : 1;
     final List<List<int>> blobs = _toColumnFormat(imageRotated, lineHeight * 8);
+    print("toColumnFormat = ${DateTime.now().millisecondsSinceEpoch - startTime} ms");
 
     // Compress according to line density
     // Line height contains 8 or 24 pixels of src image
     // Each blobs[i] contains greyscale bytes [0-255]
     // const int pxPerLine = 24 ~/ lineHeight;
-    for (int blobInd = 0; blobInd < blobs.length; blobInd++) {
-      blobs[blobInd] = _packBitsIntoBytes(blobs[blobInd]);
+    for (int i = 0; i < blobs.length; i++) {
+      blobs[i] = _packBitsIntoBytes(blobs[i]);
     }
 
     final int heightPx = imageRotated.height;
@@ -600,13 +606,14 @@ class Generator {
     header.addAll(_intLowHigh(heightPx, 2));
 
     // Adjust line spacing (for 16-unit line feeds): ESC 3 0x10 (HEX: 0x1b 0x33 0x10)
-    bytes += [27, 51, 16];
+    //bytes += [27, 51, 16];
     for (int i = 0; i < blobs.length; ++i) {
-      bytes += List.from(header)..addAll(blobs[i])..addAll('\n'.codeUnits);
+      bytes += List.from(header)..addAll(blobs[i]);
     }
+
     // Reset line spacing: ESC 2 (HEX: 0x1b 0x32)
-    bytes += [27, 50];
-    return bytes;
+    //bytes += [27, 50];
+    return Uint8ClampedList.fromList(bytes);
   }
 
   /// Print an image using (GS v 0) obsolete command
