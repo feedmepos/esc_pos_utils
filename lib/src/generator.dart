@@ -8,12 +8,14 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
+
+import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:gbk_codec/gbk_codec.dart';
 import 'package:hex/hex.dart';
 import 'package:image/image.dart';
-import 'package:gbk_codec/gbk_codec.dart';
-import 'package:esc_pos_utils/esc_pos_utils.dart';
-import 'enums.dart';
+
 import 'commands.dart';
+import 'enums.dart';
 
 class Generator {
   Generator(this._paperSize, this._profile, {this.spaceBetweenRows = 5});
@@ -227,6 +229,24 @@ class Generator {
     _styles = PosStyles();
     bytes += setGlobalCodeTable(_codeTable);
     bytes += setGlobalFont(_font);
+    return bytes;
+  }
+
+  // Set line spacing (ESC 3)
+  // Hex 1B 33 n
+  // https://reference.epson-biz.com/modules/ref_escpos/index.php?content_id=20
+  List<int> setLineSpacing(int spacing) {
+    List<int> bytes = [];
+    bytes += [0x1b, 0x33, spacing];
+    return bytes;
+  }
+
+  // Reset line spacing (ESC 2)
+  // Hex 1B 32
+  // https://reference.epson-biz.com/modules/ref_escpos/index.php?content_id=19
+  List<int> resetLineSpacing() {
+    List<int> bytes = [];
+    bytes += [0x1b, 0x32];
     return bytes;
   }
 
@@ -587,7 +607,8 @@ class Generator {
 
     const int lineHeight = highDensityVertical ? 3 : 1;
     final List<List<int>> blobs = _toColumnFormat(imageRotated, lineHeight * 8);
-    print("toColumnFormat = ${DateTime.now().millisecondsSinceEpoch - startTime} ms");
+    print(
+        "toColumnFormat = ${DateTime.now().millisecondsSinceEpoch - startTime} ms");
 
     // Compress according to line density
     // Line height contains 8 or 24 pixels of src image
