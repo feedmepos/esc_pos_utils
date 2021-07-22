@@ -13,6 +13,7 @@ const fs = '\x1C';
 // Miscellaneous
 const cInit = '$esc@'; // Initialize printer
 const cBeep = '${esc}B'; // Beeper [count] [duration]
+const cBeepFlash = '${esc}C'; // Beep flash [count] [duration] [mode]
 
 // Mech. Control
 const cCutFull = '${gs}V0'; // Full cut

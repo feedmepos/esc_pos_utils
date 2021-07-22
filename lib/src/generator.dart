@@ -466,6 +466,22 @@ class Generator {
     return bytes;
   }
 
+  List<int> beepFlash(
+      {int n = 3,
+      PosBeepDuration duration = PosBeepDuration.beep450ms,
+      PosBeepFlashMode mode = PosBeepFlashMode.BuzzFlash}) {
+    List<int> bytes = [];
+
+    if (n <= 0) return [];
+
+    int beepCount = n;
+    if (beepCount > 20) beepCount = 20;
+
+    bytes += Uint8List.fromList(List.from(cBeepFlash.codeUnits)
+      ..addAll([beepCount, duration.value, mode.index]));
+    return bytes;
+  }
+
   /// Reverse feed for [n] lines (if supported by the priner)
   List<int> reverseFeed(int n) {
     List<int> bytes = [];
